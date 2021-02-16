@@ -1,0 +1,187 @@
+Linear regression project
+The Boston housing data set has 506 data point where each one has price value and 13 features each attribute has an effect on the price of the house. Our motive is to create a model that can predict the prices of a house based on the dataset. Data in this dataset is continuous data making if appropriate for linear regression. 
+The strategies which we are going to follow is first to find the attribute which has the maximum correlation with the price (dependent variable). Then we will split the data into training and testing dataset for our model.  Then on the basis of linear regression principle we will choose our model, such that difference between the predicted and target values will be minimum. We will then train the model to arrive at slope/weight m and intercept/bias c. Then we will predict the values using the testing data set. 
+To prepare the model for Boston Housing model we will first open the jupyter notebook and open a notebook named as Linear Regression. We will then import python libraries like Numpy, Pandas, Matplotlib, FuncAnimations for animated videos for better visualization, and sklearn which will help us to import our data set and form model. We fill import HTML to display our libraries. 
+#Dataset containing the price of the houses in Boston. 
+import numpy as np
+import pandas as pd
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+from sklearn.datasets import load_boston
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from IPython.display import HTML
+Data Preprocessing
+The Boston housing data set is already present in the sklearn library. We will load the data set to a variable named boston and to obtain the description the dataset we will use boston.DESCR. we will use the target and feature part of the dataset for our project purpose. We will use the pandas dataframe to load the Target and Features dataset. We will obatain the separate target and features dataframe. 
+Now we will concatenate the two dataframe into one. Now we have a new dataframe containing all the featured attributes and the target values. 
+#load the dataset
+boston=load_boston()
+We will now describe the dataset and obtain its description
+Data Visualization
+We will use the describe() function to obtain the statistical description of our dataset. we have to decide which feature among the 13 is best suitable for predicting price values. We will visualize the highest absolute correlation with target will be decided. We will use pearson correlation by using the func corr() which takes a parameter to choose the type of correlation. We will retrieve the correlation as an absolute no and select each attribute by its name, we will make a list of all the columns names in feature. We will use zip() function to form a tuple containing pair of correlation with features in the form of tuples.
+We will now use matplot lib library functions to make a bar graph showing the correlation of target with all the features. We will sort the pairs to obtain the pairs in descending order and to extract the key we will use lambda function and we have set the reverse parameter as true as its false by default. We will set the x axis as attribute and y axis as target. 
+#description of the dataset
+print(boston.DESCR)
+We will now create a dataframe known as features and load the columnof features to that dataframe. 
+#put the data into pandas dataframe
+features=pd.DataFrame(boston.data,columns=boston.feature_names)
+features
+features['AGE']
+We will again create another dataframe named as target and load the column of target to that dataset
+target=pd.DataFrame(boston.target,columns=['target'])
+target
+max(target['target'])
+min(target['target'])
+#concatenate features and target into single dataframe
+#axis=1 makes it concatenate column wise
+df=pd.concat([features,target],axis=1)
+df
+#calculate the correlation between every column on data
+corr=df.corr('pearson')
+
+#take absolute values of correlation
+corrs=[abs(corr[attr]['target'])for attr in list(features)]
+
+#make a list of pairs[(corr,features)]
+l=list(zip(corrs,list(features)))
+
+#sort the list of pairs in reverse order with the correaltion value as key for sorting
+l.sort(key=lambda x:x[0], reverse=True)
+
+#unzip pairs to two list
+#zip(*l)-takes the list that looks like[[a,b,c][e,f,g][i,j,k]]
+#and returs [[a,e,i][b,f,j][c,g,k]]
+corrs,labels=list(zip((*l)))
+
+#plot correlation with respect to the target variable as a bar graph
+index=np.arange(len(labels))
+plt.figure(figsize=(15,5))
+plt.bar(index,corrs,width=0.5)
+plt.xlabel('Attribute')
+plt.ylabel('correlation with the target variable')
+plt.xticks(index,labels)
+plt.show()
+#normalizing the data
+X=df['LSTAT'].values
+Y=df['target'].values
+Normalizing the data
+We will now prepare the data for our model. The normalization process will bring all the columns to common scale for interpretation.  We will set X as independent and Y as dependent value and we will try to observe few Y values before normalization. We find that these values are in different scales thus we will use MinMaxScaler function from sklearn to obtain scale values in an arbitrary range. Its object will store the parameter to normalize the values.
+
+#before normalization
+print(Y[:5])
+x_scaler=MinMaxScaler()
+X=x_scaler.fit_transform(X.reshape(-1,1))
+X=X[:,-1]
+y_scaler=MinMaxScaler()
+Y=y_scaler.fit_transform(Y.reshape(-1,1))
+Y=Y[:,-1]
+#after normalization
+print(Y[:5])
+Error function
+We will specify the expression for computing the error function for this dataset in this process. 
+def error(m,x,c,t):
+    N=x.size
+    e=sum(((m*x+c)-t)**2)
+    return e*1/(2*N)
+Splitting the data
+The model prepared in machine learning is obtained by splitting the original dataset into separate dataset. There are 3 basic dataset- training, validation, and testing. This is a curriculam for supervised learning. We will now divide the dataset into the three categories by splitting the data into different amount of percentage randomly. We have now divided the data into four variables as x train, x test, y train, and y test.
+#splitting the data
+#0.2 indicates 20%of the data is randomly sampled as testing data
+xtrain,xtest,ytrain,ytest=train_test_split(X,Y,test_size=0.2)
+def update(m,x,c,t,learning_rate):
+    grad_m=sum(2*((m*x+c)-t)*x)
+    grad_c=sum(2*((m*x+c)-t))
+    m=m-grad_m*learning_rate
+    c=c-grad_c*learning_rate
+    return m,c
+Gradient descent
+We are using the update weight so as to increase the weight which makes them closer to target. We are using the error function to compute the error function values, it will return the error value. And we will use the gradient descent function to implement gradient descent algorithm by the help of update function and error function. 
+We will calculate gradient m and gradient c for gradient descent algorithm and we will define the learning rate, number of iteration and error threshold in the gradient descent function. By defining the error threshold value, we can provide the minimum acceptable error, making our training phase more accurate. 
+We have defined init m, and init c as parameters for our model, and we also have defined an empty list to store error values as error_values and another empty list to store the intermediate m and c values as mc_values. By using the for loop we will know the minimum values for error_threshold and store it and we will store values in update and error function. 
+We will now initialize our slope and learning rate. Note that learning rate should be less than 0.025 to avoid the overflow in our CPU. The %%time function will provide the CPUs time rate. 
+def gradient_descent(init_m, init_c, x, t, learning_rate, iterations, error_threshold):
+    m=init_m
+    c=init_c
+    error_values=list()
+    mc_values=list()
+    for i in range(iterations):
+        e = error(m,x,c,t)
+        if e<error_threshold:
+            print('error less than the threshold, stopping gradient descent')
+            break
+        error_values.append(e)
+        m,c=update(m,x,c,t,learning_rate)
+        mc_values.append((m,c))
+    return m,c, error_values, mc_values
+%%time
+init_m=0.9
+init_c=0
+learning_rate=0.001
+iterations=250
+error_threshold=0.001
+
+m, c, error_values, mc_values = gradient_descent(init_m, init_c, xtrain, ytrain, learning_rate, iterations, error_threshold)
+Training the model
+We will plot the scatter plot of the training data. We will now set the axis object to limit axes. The FuncAnimation function will give a video as an output showing the best fit line to change from initial to final position. 
+We will now plot a scatter plot graph to visualize the predicted values from our training set. We will plot the error values against the iteration and will notice that with each iteration the error value will decrease. 
+#as the number of iterations increases, changes in the line are less noticable
+#inorder to reduce the processing time for the animation, it is advised to choose smaller values
+mc_values_anim=mc_values[0:250:5]
+fig,ax=plt.subplots()
+ln = plt.plot([],[],'ro-',animated=True)
+
+def init():
+    plt.scatter(xtest,ytest,color='g')
+    ax.set_xlim(0,1.0)
+    ax.set_ylim(0,1.0)
+    return ln
+
+def update_frame(frame):
+    m,c=mc_values_anim[frame]
+    x1,y1=-0.5, m*-.5+c
+    x2,y2=1.5, m*1.5+c
+    ln.set_data([x1,x2],[y1,y2])
+    return ln
+
+anim=FuncAnimation(fig,update_frame, frames=range(len(mc_values_anim)), init_func=init, blit=True)
+
+HTML(anim.to_html5_video())
+plt.scatter(xtrain,ytrain,color='b')
+plt.plot(xtrain,(m*xtrain+c),color='r')
+plt.plot(np.arange(len(error_values)),error_values)
+plt.ylabel('error')
+plt.xlabel('iterations')
+Predicting the prices
+We will first create a list to store target values by using line equation. We will then calculate the error by mean_squared_error function. To predict values we will first create a dataframe with xtest and ytest and observe. We will plot the values by means of scatter plot. Then for more clearity we will plot the target values against prices. For this we will first reshape the values. We will scale the data and store it into new variables. We will then use the zip function and obtain the dataframe of the scaled data with prices.  
+#prediction
+#calculate the predictions on the test set as a vectorised operation
+predicted= (m*xtest)+c
+#compute MSE for the predictated value on the testing set
+mean_squared_error(ytest,predicted)
+#put xtest, ytest and predicted values into a single DataFrame so the we
+#can see the predicted values alongside the testing set
+p = pd.DataFrame(list(zip(xtest, ytest, predicted)), columns=['x','target_y','predicted'])
+p.head()
+plt.scatter(xtest,ytest,color='b')
+plt.plot(xtest,predicted,color='r')
+#reshape to change the shape that is required by the scaler
+predicted=np.array(predicted).reshape(-1,1)
+xtest=xtest.reshape(-1,1)
+ytest=ytest.reshape(-1,1)
+
+xtest_scaled=x_scaler.inverse_transform(xtest)
+ytest_scaled=y_scaler.inverse_transform(ytest)
+predicted_scaled=y_scaler.inverse_transform(predicted)
+
+#this is to remove extra dimension
+xtest_scaled=xtest_scaled[:,-1]
+ytest_scaled=ytest_scaled[:,-1]
+predicted_scaled=predicted_scaled[:,-1]
+
+p=pd.DataFrame(list(zip(xtest_scaled,ytest_scaled,predicted_scaled)),columns=['x','target_y','predicted_y'])
+p=p.round(decimals=2)
+p.head()
